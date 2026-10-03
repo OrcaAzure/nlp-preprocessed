@@ -50,10 +50,12 @@ ASSUMPTIONS
  8. Typos in POS labels are mapped by intent: 'ad.'->adverb, 'dj.'->adjective, 'ajd'->adjective; a lone leading '.' (POS letters lost) -> unknown.
  9. Entries with several POS (e.g. 'n., adj.') get one combined label 'noun/adjective'.
 10. Tricky Spanish-looking words stay in the lexicon (new_spelling == old_spelling) AND are listed in unchanged_spellings.csv. The check runs per whitespace-separated token, so in a phrase only the tricky token is protected; the other tokens are converted normally.
-11. Tricky patterns beyond your list: gu+e/i, 'ck', 'c' before y, accented vowels. Words flagged for 'll', 'z', 'ch' etc. are listed even if they contain no c/j (the reason says so).
-12. Step order of execution: 1, 2, 5, 3, 4, 6, 7, 8, 9 (step 5 must precede 3 and 4).
-13. Merging (step 8): key = (new_spelling, word_type), case-insensitive. English meanings and match_keywords are joined with '; '; differing old_spellings are joined with '; ' too.
-14. Phrases (step 6) = Ilocano entries that still contain a space after cleaning; they are de-duplicated separately from single words.
+11. Tricky patterns beyond your list: gu+e/i, 'ck', 'c' before y, accented vowels. Words flagged for 'll', 'ch' etc. are listed even if they contain no c/j (the reason says so).
+12. Step order of execution: 1, 2, 5, 3, 4, 4b, 6, 7, 8, 9 (step 5 must precede 3 and 4).
+13. Extra rules from reviewer feedback (step 4b): v->b, f->p, z->s, applied to every token including tricky ones; only c->k and j->h are blocked for tricky tokens. 'z' was therefore removed from the tricky patterns.
+14. Word types: the source tag belongs to the English headword, so a few Ilocano words inherited a wrong type; obvious cases are corrected from the POS_CORRECTIONS table in step 7 and logged. Remaining labels are still the English headword's type and may not fit the Ilocano word.
+15. Merging (step 8): key = (new_spelling, word_type), case-insensitive. English meanings and match_keywords are joined with '; '; differing old_spellings are joined with '; ' too.
+16. Phrases (step 6) = Ilocano entries that still contain a space after cleaning; they are de-duplicated separately from single words.
 
 Parsed 5998 entries; 7 with a POS suffix on the headword; 1 with an empty word or definition (kept in parsing, produce no rows).
 
@@ -96,11 +98,10 @@ Segments with parenthetical notes cleaned: 0; segments dropped as empty after cl
 ==============================================================================
 STEP 5 (executed BEFORE steps 3 and 4) -- SPANISH-LOOKING / TRICKY WORDS
 ==============================================================================
-Patterns checked per token: ch: contains 'ch' (Spanish digraph); qu: contains 'qu' (Spanish/old-orthography k-sound); ll: contains 'll' (Spanish digraph); n-tilde: contains 'ñ' (Spanish letter); z: contains 'z' (Spanish loan letter); x: contains 'x' (Spanish/English loan letter); soft-c: soft 'c' before e/i/y (s-sound; c->k would be wrong); gu+e/i: contains 'gu' before e/i (Spanish silent-u spelling); ck: contains 'ck' (English loan; c->k would give 'kk'); accent: contains accented vowel (Spanish loan)
-[STEP 5] rows: before=126  after=126  (12 rows flagged tricky; 6 of them contain c/j and are therefore actually protected from replacement)
+Patterns checked per token: ch: contains 'ch' (Spanish digraph); qu: contains 'qu' (Spanish/old-orthography k-sound); ll: contains 'll' (Spanish digraph); n-tilde: contains 'ñ' (Spanish letter); x: contains 'x' (Spanish/English loan letter); soft-c: soft 'c' before e/i/y (s-sound; c->k would be wrong); gu+e/i: contains 'gu' before e/i (Spanish silent-u spelling); ck: contains 'ck' (English loan; c->k would give 'kk'); accent: contains accented vowel (Spanish loan)
+[STEP 5] rows: before=126  after=126  (11 rows flagged tricky; 6 of them contain c/j and are therefore actually protected from replacement)
       4  contains 'ch' (Spanish digraph)
       3  contains 'll' (Spanish digraph)
-      2  contains 'z' (Spanish loan letter)
       2  soft 'c' before e/i/y (s-sound; c->k would be wrong)
       2  contains 'qu' (Spanish/old-orthography k-sound)
       1  contains 'ñ' (Spanish letter)
@@ -114,6 +115,14 @@ STEP 3 -- c -> k  (tricky tokens skipped)
 STEP 4 -- j -> h  (tricky tokens skipped)
 ==============================================================================
 [STEP 4] rows: before=126  after=126  (0 spellings changed)
+
+==============================================================================
+STEP 4b -- ADDITIONAL RULES v->b, f->p, z->s (applied to ALL tokens, incl. tricky ones)
+==============================================================================
+Rationale: ch/qu/ll/soft-c protection only blocks c->k and j->h. 'ch' words such as lechon stay 'lechon' (they must not become 'lekhon'). 'z' is therefore no longer a tricky pattern.
+[STEP 4b] rows (v->b): before=126  after=126  (3 spellings changed)
+[STEP 4b] rows (f->p): before=126  after=126  (1 spellings changed)
+[STEP 4b] rows (z->s): before=126  after=126  (2 spellings changed)
 
 ==============================================================================
 STEP 6 -- SEPARATE PHRASES FROM SINGLE WORDS
@@ -157,6 +166,15 @@ Raw labels actually seen in the culinary rows (rows):
    'adj.'         -> adjective              10
    '(none)'       -> unknown                1
    'n'            -> noun                   1
+
+Manual word-type corrections (source label belongs to the English headword):
+   agluto         (cook): noun -> verb   ['agluto' = to cook (ag- verb); source tagged English noun 'cook']
+   mangan         (eat): adjective -> verb   ['mangan' = to eat; source tagged the English headword 'eat' as adj.]
+   panagcalap     (fish): verb -> noun   ['panag-' forms a verbal noun (fishing); source tagged English verb 'fish']
+   ifrito         (fry): noun -> verb   ['ifrito' = to fry (i- verb); source tagged English noun 'fry']
+   hamon          (ham): unknown -> noun   [source gave no word type; 'hamon' (ham) is a noun]
+   agsucar        (sugar): noun -> verb   ['agsucar' = to sweeten/add sugar (ag- verb); source tagged English noun 'sugar']
+   6 rows corrected.
 [STEP 7] rows (lexicon): before=116  after=116  
 [STEP 7] rows (phrases): before=10  after=10  
 
@@ -169,7 +187,7 @@ STEP 8 -- REMOVE DUPLICATES / MERGE MEANINGS
 ==============================================================================
 STEP 9 -- SAVE
 ==============================================================================
-[STEP 9] files: before=-  after=5 data/log files  (lexicon=111 rows, phrases=10 rows, unchanged_spellings=12 rows)
+[STEP 9] files: before=-  after=5 data/log files  (lexicon=111 rows, phrases=10 rows, unchanged_spellings=11 rows)
 
 ==============================================================================
 ORIGINAL FILE INTEGRITY
@@ -185,12 +203,15 @@ SUMMARY OF COUNTS PER STEP
 Step  Unit                       Before      After  Note
 1     entries                      5998         92  (97 keyword hits, 5 removed by exclusions)
 2     entries->rows                  92        126  
-5     rows                          126        126  (12 rows flagged tricky; 6 of them contain c/j and are therefore actually protected from replacement)
+5     rows                          126        126  (11 rows flagged tricky; 6 of them contain c/j and are therefore actually protected from replacement)
 3     rows                          126        126  (29 spellings changed)
 4     rows                          126        126  (0 spellings changed)
+4b    rows (v->b)                   126        126  (3 spellings changed)
+4b    rows (f->p)                   126        126  (1 spellings changed)
+4b    rows (z->s)                   126        126  (2 spellings changed)
 6     rows (single words)           126        116  (10 phrase rows moved to culinary_phrases.csv)
 7     rows (lexicon)                116        116  
 7     rows (phrases)                 10         10  
 8     rows (lexicon)                116        111  (exact duplicates removed=0; groups merged=4 absorbing 5 rows; groups with differing old_spelling=0)
 8     rows (phrases)                 10         10  (exact duplicates removed=0; groups merged=0 absorbing 0 rows; groups with differing old_spelling=0)
-9     files                           - 5 data/log files  (lexicon=111 rows, phrases=10 rows, unchanged_spellings=12 rows)
+9     files                           - 5 data/log files  (lexicon=111 rows, phrases=10 rows, unchanged_spellings=11 rows)

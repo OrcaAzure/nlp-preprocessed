@@ -1,8 +1,8 @@
 ﻿old_spelling,new_spelling,english_meaning,word_type,match_keyword
 agalibungubong,agalibungubong,steam,verb,steam
 agatol,agatol,crab,noun,crab
-agluto,agluto,cook,noun,cook
-agsucar,agsukar,sugar,noun,sugar
+agluto,agluto,cook,verb,cook
+agsucar,agsukar,sugar,verb,sugar
 alibung-ubong,alibung-ubong,steam,noun,steam
 alingasaw,alingasaw,steam,noun,steam
 arac,arak,wine,noun,wine
@@ -13,7 +13,7 @@ bibingca,bibingka,cake,noun,cake
 billaay,billaay,flour,noun,flour
 bukel,bukel,grain,noun,grain
 bunga,bunga,fruit,noun,fruit
-cerveza,cerveza,beer,noun,beer
+cerveza,cerbesa,beer,noun,beer
 cha,cha,tea,noun,tea
 cocinero,cocinero,cook,noun,cook
 dalayap,dalayap,lemon,noun,lemon
@@ -22,14 +22,14 @@ digo,digo,broth; soup,noun,broth; soup
 diro,diro,honey,noun,honey
 gatas,gatas,milk,noun,milk
 gatasen,gatasen,milk,verb,milk
-hamon,hamon,ham,unknown,ham
+hamon,hamon,ham,noun,ham
 harina,harina,flour,noun,flour
-ifrito,ifrito,fry,noun,fry
 igisa,igisa,stew,verb,stew
 imuco,imuko,knife,noun,knife
 inapuy,inapuy,rice,noun,rice
 inumen,inumen,beverage,noun,beverage
 inumen,inumen,drink,verb,drink
+ifrito,iprito,fry,verb,fry
 itic,itik,duck,noun,duck
 itlog,itlog,egg,noun,egg
 calamansi,kalamansi,lemon,noun,lemon
@@ -53,9 +53,9 @@ lechugas,lechugas,lettuce,noun,lettuce
 lemon,lemon,lemon,noun,lemon
 longganisa,longganisa,sausage,noun,sausage
 mabisin,mabisin,hungry,adjective,hungry
-maiz,maiz,corn,noun,corn
+maiz,mais,corn,noun,corn
 malucong,malukong,bowl,noun,bowl
-mangan,mangan,eat,adjective,eat
+mangan,mangan,eat,verb,eat
 manoc,manok,chicken,noun,chicken
 mantiquilla,mantiquilla,butter,noun,butter
 mawaw,mawaw,thirsty,adjective,thirsty
@@ -78,7 +78,7 @@ pagsawsawan,pagsawsawan,sauce,noun,sauce
 palanggana,palanggana,pan,noun,pan
 panaderia,panaderia,bakery,noun,bakery
 panadero,panadero,baker,noun,baker
-panagcalap,panagkalap,fish,verb,fish
+panagcalap,panagkalap,fish,noun,fish
 pang-ngaldaw,pang-ngaldaw,dinner,noun,dinner
 panganan,panganan,restaurant,noun,restaurant
 pangngaldaw,pangngaldaw,lunch,noun,lunch
@@ -107,6 +107,6 @@ tosino,tosino,bacon,noun,bacon
 tubbog,tubbog,juice,noun,juice
 tuno,tuno,roast,noun,roast
 tunuen,tunuen,roast,verb,roast
+uvas,ubas,grape,noun,grape
 uminom,uminom,drink,verb,drink
 unas,unas,sugar cane,noun,sugar
-uvas,uvas,grape,noun,grape

@@ -89,13 +89,27 @@ POS_LABEL = OrderedDict([
     ("prefix", "prefix"),
 ])
 
+# Extra spelling rules (applied to ALL tokens, after c->k / j->h): v->b, f->p, z->s.
+SPELLING_RULES = [("v", "b"), ("f", "p"), ("z", "s")]
+
+# Step 7b: manual word-type corrections. The source label belongs to the ENGLISH headword
+# (e.g. 'eat' tagged adj.), so some Ilocano words inherit the wrong type.
+# key = (old_spelling lower-case, english headword lower-case) -> (label, reason)
+POS_CORRECTIONS = {
+    ("mangan", "eat"): ("verb", "'mangan' = to eat; source tagged the English headword 'eat' as adj."),
+    ("agluto", "cook"): ("verb", "'agluto' = to cook (ag- verb); source tagged English noun 'cook'"),
+    ("ifrito", "fry"): ("verb", "'ifrito' = to fry (i- verb); source tagged English noun 'fry'"),
+    ("agsucar", "sugar"): ("verb", "'agsucar' = to sweeten/add sugar (ag- verb); source tagged English noun 'sugar'"),
+    ("panagcalap", "fish"): ("noun", "'panag-' forms a verbal noun (fishing); source tagged English verb 'fish'"),
+    ("hamon", "ham"): ("noun", "source gave no word type; 'hamon' (ham) is a noun"),
+}
+
 # Step 5: Spanish-looking patterns (checked BEFORE c->k / j->h).
 TRICKY_PATTERNS = [
     ("ch", re.compile(r"ch", re.I), "contains 'ch' (Spanish digraph)"),
     ("qu", re.compile(r"qu", re.I), "contains 'qu' (Spanish/old-orthography k-sound)"),
     ("ll", re.compile(r"ll", re.I), "contains 'll' (Spanish digraph)"),
     ("n-tilde", re.compile(r"ñ", re.I), "contains 'ñ' (Spanish letter)"),
-    ("z", re.compile(r"z", re.I), "contains 'z' (Spanish loan letter)"),
     ("x", re.compile(r"x", re.I), "contains 'x' (Spanish/English loan letter)"),
     ("soft-c", re.compile(r"c(?=[eiy])", re.I), "soft 'c' before e/i/y (s-sound; c->k would be wrong)"),
     ("gu+e/i", re.compile(r"gu(?=[ei])", re.I), "contains 'gu' before e/i (Spanish silent-u spelling)"),
@@ -503,8 +517,14 @@ def main():
              "in unchanged_spellings.csv. The check runs per whitespace-separated token, so in a phrase only "
              "the tricky token is protected; the other tokens are converted normally.")
     A.append("Tricky patterns beyond your list: gu+e/i, 'ck', 'c' before y, accented vowels. Words flagged for "
-             "'ll', 'z', 'ch' etc. are listed even if they contain no c/j (the reason says so).")
-    A.append("Step order of execution: 1, 2, 5, 3, 4, 6, 7, 8, 9 (step 5 must precede 3 and 4).")
+             "'ll', 'ch' etc. are listed even if they contain no c/j (the reason says so).")
+    A.append("Step order of execution: 1, 2, 5, 3, 4, 4b, 6, 7, 8, 9 (step 5 must precede 3 and 4).")
+    A.append("Extra rules from reviewer feedback (step 4b): v->b, f->p, z->s, applied to every token including "
+             "tricky ones; only c->k and j->h are blocked for tricky tokens. 'z' was therefore removed from "
+             "the tricky patterns.")
+    A.append("Word types: the source tag belongs to the English headword, so a few Ilocano words inherited a "
+             "wrong type; obvious cases are corrected from the POS_CORRECTIONS table in step 7 and logged. "
+             "Remaining labels are still the English headword's type and may not fit the Ilocano word.")
     A.append("Merging (step 8): key = (new_spelling, word_type), case-insensitive. English meanings and "
              "match_keywords are joined with '; '; differing old_spellings are joined with '; ' too.")
     A.append("Phrases (step 6) = Ilocano entries that still contain a space after cleaning; they are "
@@ -614,7 +634,7 @@ def main():
             if re.search(r"[cCjJ]", r["old"]):
                 affected += 1
             else:
-                r["tricky"] += " (no c/j present, so unchanged either way)"
+                r["tricky"] += " (no c/j present, so c->k / j->h change nothing)"
     n_tricky = sum(1 for r in rows if r["flagged"])
     log.step("5", "rows", len(rows), len(rows), "(%d rows flagged tricky; %d of them contain c/j and are "
              "therefore actually protected from replacement)" % (n_tricky, affected))
@@ -637,6 +657,17 @@ def main():
         r["new"] = new
     log.step("4", "rows", len(rows), len(rows), "(%d spellings changed)" % ch4)
 
+    log.h("STEP 4b -- ADDITIONAL RULES v->b, f->p, z->s (applied to ALL tokens, incl. tricky ones)")
+    log.add("Rationale: ch/qu/ll/soft-c protection only blocks c->k and j->h. 'ch' words such as lechon stay "
+            "'lechon' (they must not become 'lekhon'). 'z' is therefore no longer a tricky pattern.")
+    for a_, b_ in SPELLING_RULES:
+        chn = 0
+        for r in rows:
+            new = r["new"].replace(a_, b_).replace(a_.upper(), b_.upper())
+            chn += new != r["new"]
+            r["new"] = new
+        log.step("4b", "rows (%s->%s)" % (a_, b_), len(rows), len(rows), "(%d spellings changed)" % chn)
+
     # ---- Step 6: phrases --------------------------------------------------------------------------
     log.h("STEP 6 -- SEPARATE PHRASES FROM SINGLE WORDS")
     lex = [r for r in rows if " " not in r["old"]]
@@ -657,6 +688,17 @@ def main():
     log.add("Raw labels actually seen in the culinary rows (rows):")
     for (raw, lab), c in sorted(raw_counter.items(), key=lambda x: (-x[1], x[0])):
         log.add("   %-14r -> %-22s %d" % (raw, lab, c))
+    log.add("")
+    log.add("Manual word-type corrections (source label belongs to the English headword):")
+    fixed = 0
+    for r in lex + phr:
+        key = (r["old"].lower(), r["english"].lower())
+        if key in POS_CORRECTIONS and POS_CORRECTIONS[key][0] != r["pos"]:
+            lab, why = POS_CORRECTIONS[key]
+            log.add("   %-14s (%s): %s -> %s   [%s]" % (r["old"], r["english"], r["pos"], lab, why))
+            r["pos"] = lab
+            fixed += 1
+    log.add("   %d rows corrected." % fixed)
     log.step("7", "rows (lexicon)", len(lex), len(lex))
     log.step("7", "rows (phrases)", len(phr), len(phr))
 
@@ -678,8 +720,11 @@ def main():
     to_row = lambda r: [r["old"], r["new"], r["english"], r["pos"], r["kw"]]
     write_csv(os.path.join(args.outdir, "culinary_lexicon.csv"), header, [to_row(r) for r in lex])
     write_csv(os.path.join(args.outdir, "culinary_phrases.csv"), header, [to_row(r) for r in phr])
-    unch = [(r["new"], r["english"], r["pos"], r["tricky"]) for r in lex if r["tricky"]]
-    unch += [(r["new"], r["english"], r["pos"], "[phrase] " + r["tricky"]) for r in phr if r["tricky"]]
+    def _why(r, prefix=""):
+        extra = "" if r["new"] == r["old"] else " | c->k/j->h skipped; final spelling after v->b, f->p, z->s: '%s'" % r["new"]
+        return prefix + r["tricky"] + extra
+    unch = [(r["old"], r["english"], r["pos"], _why(r)) for r in lex if r["tricky"]]
+    unch += [(r["old"], r["english"], r["pos"], _why(r, "[phrase] ")) for r in phr if r["tricky"]]
     unch.sort(key=lambda x: (x[0].lower(), x[0], x[2]))
     write_csv(os.path.join(args.outdir, "unchanged_spellings.csv"),
               ["word", "english_meaning", "word_type", "reason"], unch)
