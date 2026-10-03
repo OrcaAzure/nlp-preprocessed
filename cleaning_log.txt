@@ -1,0 +1,196 @@
+cleaning_log.txt -- Ilocano dictionary preprocessing
+
+==============================================================================
+0. INPUT, INTEGRITY HASH, SCHEMA DETECTION
+==============================================================================
+Input located at: /mnt/user-data/uploads/ilocano_dictionary.json
+SHA-256 of source BEFORE processing: 9b7753cc07fe15bde026a08b973d6971b817f078be66a7085fd59c9cae007d9f
+Source size: 1104230 bytes
+Top-level JSON type: list
+Number of records: 5998
+Record keys: ['word', 'link', 'definition', 'language']
+10 sample entries:
+  {"word": "a", "link": "https://ilocano.pinoydictionary.com/word/a/", "definition": "art. maysa, umuna a letra ti alfabeto", "language": "Ilocano"}
+  {"word": "abandon", "link": "https://ilocano.pinoydictionary.com/word/abandon/", "definition": "v. baybay-an, ibati, licudan", "language": "Ilocano"}
+  {"word": "abdomen", "link": "https://ilocano.pinoydictionary.com/word/abdomen/", "definition": "n. tian", "language": "Ilocano"}
+  {"word": "abduct", "link": "https://ilocano.pinoydictionary.com/word/abduct/", "definition": "v. itaray, agawen", "language": "Ilocano"}
+  {"word": "abeyance", "link": "https://ilocano.pinoydictionary.com/word/abeyance/", "definition": "n. panagur-uray, panangteng-ngel", "language": "Ilocano"}
+  {"word": "abide", "link": "https://ilocano.pinoydictionary.com/word/abide/", "definition": "v. agtaeng", "language": "Ilocano"}
+  {"word": "ability", "link": "https://ilocano.pinoydictionary.com/word/ability/", "definition": "n. cabaelan", "language": "Ilocano"}
+  {"word": "able", "link": "https://ilocano.pinoydictionary.com/word/able/", "definition": "adj. napigsa, addan cabaelan, addaan bileg", "language": "Ilocano"}
+  {"word": "abnormal", "link": "https://ilocano.pinoydictionary.com/word/abnormal/", "definition": "adj. naisupadi iti caaduan", "language": "Ilocano"}
+  {"word": "aboard", "link": "https://ilocano.pinoydictionary.com/word/aboard/", "definition": "adv. nacalugan, nacasacay", "language": "Ilocano"}
+Per-field profile (used for detection):
+  word         filled=5998 distinct_ratio=0.94 mean_len=6.6 mean_tokens=1.01 POS_prefix_rate=0.00 url_rate=0.00 ilocano_marker_rate=0.000 english_stopword_rate=0.004
+  link         filled=5998 distinct_ratio=0.94 mean_len=48.6 mean_tokens=1.00 POS_prefix_rate=0.00 url_rate=1.00 ilocano_marker_rate=0.000 english_stopword_rate=0.001
+  definition   filled=5998 distinct_ratio=0.95 mean_len=19.9 mean_tokens=3.22 POS_prefix_rate=1.00 url_rate=0.00 ilocano_marker_rate=0.094 english_stopword_rate=0.001
+  language     filled=5998 distinct_ratio=0.00 mean_len=7.0 mean_tokens=1.00 POS_prefix_rate=0.00 url_rate=0.00 ilocano_marker_rate=0.000 english_stopword_rate=0.000
+
+DETECTED SCHEMA:
+  field holding the headword          : 'word'  -> ENGLISH
+  field holding the definition        : 'definition'  -> ILOCANO (comma/semicolon separated list)
+  word type (part of speech)          : embedded as a prefix of 'definition', e.g. 'n. canen' / 'adj., v. awan'
+  link / language fields (ignored)    : 'link' / constant 'Ilocano'
+  direction                           : English -> Ilocano
+  evidence: Ilocano function-word rate higher in 'definition' (0.094) than in 'word' (0.000)
+  evidence: English stop-word rate higher in 'word'
+  evidence: constant field 'language' = 'Ilocano' (target language of a headword lookup)
+  evidence: URL slug equals 'word' value in 99% of rows (site headword = 'word')
+
+==============================================================================
+ASSUMPTIONS
+==============================================================================
+ 1. Input is used from the local copy (no network needed). A download from the GitHub raw URL is attempted only if no local file is found.
+ 2. 'English side' for keyword matching = the English headword (cleaned). Ilocano definition text is NOT searched, except that the four Ilocano dish names (dinengdeng, pinakbet, bagnet, pinapaitan) are searched on the Ilocano side because they cannot occur in English headwords.
+ 3. Whole-word matching is literal, so inflected forms (eating, cooked, plates ...) were added to the keyword list; a few obvious food words not in your list were also added (pumpkin, ham, cheese ...). Both groups are listed below and visible in match_keyword.
+ 4. All matched keywords are recorded in match_keyword, joined with '; ' (list order).
+ 5. Text is NFC-normalised, whitespace collapsed; capitalisation kept; comparisons for duplicates are case-insensitive.
+ 6. Parenthetical notes in Ilocano text, e.g. '(prefix)', '(reservoir)', are removed from the Ilocano word; segments left empty are dropped. Commas/semicolons inside parentheses do not split.
+ 7. Headwords carrying a stray POS suffix (e.g. 'mason n.') are cleaned and the POS taken from it if the definition has none.
+ 8. Typos in POS labels are mapped by intent: 'ad.'->adverb, 'dj.'->adjective, 'ajd'->adjective; a lone leading '.' (POS letters lost) -> unknown.
+ 9. Entries with several POS (e.g. 'n., adj.') get one combined label 'noun/adjective'.
+10. Tricky Spanish-looking words stay in the lexicon (new_spelling == old_spelling) AND are listed in unchanged_spellings.csv. The check runs per whitespace-separated token, so in a phrase only the tricky token is protected; the other tokens are converted normally.
+11. Tricky patterns beyond your list: gu+e/i, 'ck', 'c' before y, accented vowels. Words flagged for 'll', 'z', 'ch' etc. are listed even if they contain no c/j (the reason says so).
+12. Step order of execution: 1, 2, 5, 3, 4, 6, 7, 8, 9 (step 5 must precede 3 and 4).
+13. Merging (step 8): key = (new_spelling, word_type), case-insensitive. English meanings and match_keywords are joined with '; '; differing old_spellings are joined with '; ' too.
+14. Phrases (step 6) = Ilocano entries that still contain a space after cleaning; they are de-duplicated separately from single words.
+
+Parsed 5998 entries; 7 with a POS suffix on the headword; 1 with an empty word or definition (kept in parsing, produce no rows).
+
+==============================================================================
+STEP 1 -- CULINARY FILTER (whole-word, case-insensitive, on the English side)
+==============================================================================
+Core keywords (86, from your list): food, eat, cook, boil, fry, grill, roast, bake, steam, stew, soup, broth, sauce, spice, salt, sugar, vinegar, oil, rice, grain, corn, meat, pork, beef, chicken, goat, fish, shrimp, shellfish, seafood, egg, vegetable, fruit, bean, legume, squash, eggplant, bitter melon, tomato, onion, garlic, ginger, chili, pepper, banana, coconut, tamarind, ferment, dried, smoked, pickled, raw, bitter, sour, sweet, salty, flavor, taste, dish, meal, breakfast, lunch, dinner, snack, dessert, cake, bread, drink, beverage, wine, coffee, tea, kitchen, pot, pan, bowl, plate, spoon, fork, knife, ladle, stove, dinengdeng, pinakbet, bagnet, pinapaitan
+Added inflected forms (56): eating, eaten, ate, eats, cooks, cooked, cooking, cooker, boils, boiled, boiling, fries, fried, frying, grilled, grilling, roasted, roasting, baked, baking, steamed, steaming, stewed, spices, spiced, spicy, salted, sugars, oils, eggs, beans, fruits, vegetables, onions, peppers, bananas, cakes, drinks, drinking, dishes, meals, snacks, breads, pots, pans, bowls, plates, spoons, forks, knives, tomatoes, chilies, coconuts, fermented, grains, meats
+Added extra food words (36): pumpkin, potato, cabbage, mango, pineapple, lemon, grape, melon, cucumber, lettuce, salad, ham, bacon, sausage, crab, clam, oyster, duck, milk, cheese, butter, flour, honey, juice, beer, restaurant, oven, kettle, tasty, hungry, thirsty, feast, bakery, baker, cuisine, appetite
+Ilocano-side dish names also searched on the Ilocano text: dinengdeng, pinakbet, bagnet, pinapaitan
+
+Exclusion list (applied to entries that matched a keyword):
+  headword~/\bsmall[- ]fry\b/ -> 'small fry' = insignificant people / young fish
+  headword~/\bpepper[- ]spray\b/ -> 'pepper spray' = self-defence weapon
+  headword~/\bsalt (?:away|of the earth)\b|\bold salt\b|\bworth one'?s salt\b/ -> 'salt' used metaphorically (idiom)
+  headword~/\bchicken flea\b/ -> 'chicken flea' = a parasite, not food
+  headword~/\bchicken[- ]hearted\b|\bchicken[- ]out\b/ -> 'chicken' = cowardly (idiom)
+  headword~/\bmelting pot\b/ -> 'melting pot' = cultural mix, not a cooking pot
+  headword~/\bpot[- ]shot\b|\bpot[- ]belly\b|\bpot ?luck\b/ -> 'pot' used non-literally
+  headword~/\bflash in the pan\b|\bpan out\b/ -> 'pan' used in an idiom
+  headword~/\bsour grapes\b|\bbitter end\b|\braw deal\b|\bsweet[- ]talk\b/ -> idiom, not a culinary sense
+  headword~/^boil$/ + definition~/^n\b/ -> 'boil' (noun) = skin abscess (Ilocano 'letteg'), not cooking
+  headword~/^clam$/ + definition~/carpentero/ -> source definition describes a carpenter's clamp (headword truncated), not a shellfish
+[STEP 1] entries: before=5998  after=92  (97 keyword hits, 5 removed by exclusions)
+Ilocano-side dish-name hits: 0
+Exclusions actually applied (5):
+  EXCLUDED 'boil' | letteg | matched=boil | 'boil' (noun) = skin abscess (Ilocano 'letteg'), not cooking
+  EXCLUDED 'chicken flea' | ulmog | matched=chicken | 'chicken flea' = a parasite, not food
+  EXCLUDED 'chicken-hearted' | tacrot, nacapuy a pikanakem | matched=chicken | 'chicken' = cowardly (idiom)
+  EXCLUDED 'clam' | cappo, maysa cadagiti aramaten ti carpentero a pagipit | matched=clam | source definition describes a carpenter's clamp (headword truncated), not a shellfish
+  EXCLUDED 'melting pot' | banga a paglaocan, pagdaagupan | matched=pot | 'melting pot' = cultural mix, not a cooking pot
+
+==============================================================================
+STEP 2 -- ONE ROW PER ILOCANO WORD
+==============================================================================
+Source is English -> Ilocano, so it was INVERTED: each English entry's Ilocano list was split on commas/semicolons (outside parentheses) into one row per Ilocano word.
+Segments with parenthetical notes cleaned: 0; segments dropped as empty after cleaning: 1
+[STEP 2] entries->rows: before=92  after=126  
+
+==============================================================================
+STEP 5 (executed BEFORE steps 3 and 4) -- SPANISH-LOOKING / TRICKY WORDS
+==============================================================================
+Patterns checked per token: ch: contains 'ch' (Spanish digraph); qu: contains 'qu' (Spanish/old-orthography k-sound); ll: contains 'll' (Spanish digraph); n-tilde: contains 'ñ' (Spanish letter); z: contains 'z' (Spanish loan letter); x: contains 'x' (Spanish/English loan letter); soft-c: soft 'c' before e/i/y (s-sound; c->k would be wrong); gu+e/i: contains 'gu' before e/i (Spanish silent-u spelling); ck: contains 'ck' (English loan; c->k would give 'kk'); accent: contains accented vowel (Spanish loan)
+[STEP 5] rows: before=126  after=126  (12 rows flagged tricky; 6 of them contain c/j and are therefore actually protected from replacement)
+      4  contains 'ch' (Spanish digraph)
+      3  contains 'll' (Spanish digraph)
+      2  contains 'z' (Spanish loan letter)
+      2  soft 'c' before e/i/y (s-sound; c->k would be wrong)
+      2  contains 'qu' (Spanish/old-orthography k-sound)
+      1  contains 'ñ' (Spanish letter)
+
+==============================================================================
+STEP 3 -- c -> k  (tricky tokens skipped)
+==============================================================================
+[STEP 3] rows: before=126  after=126  (29 spellings changed)
+
+==============================================================================
+STEP 4 -- j -> h  (tricky tokens skipped)
+==============================================================================
+[STEP 4] rows: before=126  after=126  (0 spellings changed)
+
+==============================================================================
+STEP 6 -- SEPARATE PHRASES FROM SINGLE WORDS
+==============================================================================
+[STEP 6] rows (single words): before=126  after=116  (10 phrase rows moved to culinary_phrases.csv)
+
+==============================================================================
+STEP 7 -- NORMALISE WORD TYPES
+==============================================================================
+Mapping table used (variant, case-insensitive, dots ignored -> label):
+   n            -> noun
+   noun         -> noun
+   v            -> verb
+   vb           -> verb
+   verb         -> verb
+   adj          -> adjective
+   adjective    -> adjective
+   ajd          -> adjective
+   dj           -> adjective
+   adv          -> adverb
+   adverb       -> adverb
+   ad           -> adverb
+   pron         -> pronoun
+   pronoun      -> pronoun
+   prep         -> preposition
+   preposition  -> preposition
+   conj         -> conjunction
+   conjunction  -> conjunction
+   inter        -> interjection
+   interj       -> interjection
+   interjection -> interjection
+   int          -> interjection
+   art          -> article
+   article      -> article
+   prefix       -> prefix
+   multiple POS (e.g. 'n., adj.', 'n. & adj.') -> labels joined by '/' in order, e.g. noun/adjective
+   anything else / missing -> unknown
+Raw labels actually seen in the culinary rows (rows):
+   'n.'           -> noun                   101
+   'v.'           -> verb                   13
+   'adj.'         -> adjective              10
+   '(none)'       -> unknown                1
+   'n'            -> noun                   1
+[STEP 7] rows (lexicon): before=116  after=116  
+[STEP 7] rows (phrases): before=10  after=10  
+
+==============================================================================
+STEP 8 -- REMOVE DUPLICATES / MERGE MEANINGS
+==============================================================================
+[STEP 8] rows (lexicon): before=116  after=111  (exact duplicates removed=0; groups merged=4 absorbing 5 rows; groups with differing old_spelling=0)
+[STEP 8] rows (phrases): before=10  after=10  (exact duplicates removed=0; groups merged=0 absorbing 0 rows; groups with differing old_spelling=0)
+
+==============================================================================
+STEP 9 -- SAVE
+==============================================================================
+[STEP 9] files: before=-  after=5 data/log files  (lexicon=111 rows, phrases=10 rows, unchanged_spellings=12 rows)
+
+==============================================================================
+ORIGINAL FILE INTEGRITY
+==============================================================================
+SHA-256 source BEFORE : 9b7753cc07fe15bde026a08b973d6971b817f078be66a7085fd59c9cae007d9f
+SHA-256 source AFTER  : 9b7753cc07fe15bde026a08b973d6971b817f078be66a7085fd59c9cae007d9f
+SHA-256 output copy   : 9b7753cc07fe15bde026a08b973d6971b817f078be66a7085fd59c9cae007d9f
+Byte-for-byte identical and unmodified: YES
+
+==============================================================================
+SUMMARY OF COUNTS PER STEP
+==============================================================================
+Step  Unit                       Before      After  Note
+1     entries                      5998         92  (97 keyword hits, 5 removed by exclusions)
+2     entries->rows                  92        126  
+5     rows                          126        126  (12 rows flagged tricky; 6 of them contain c/j and are therefore actually protected from replacement)
+3     rows                          126        126  (29 spellings changed)
+4     rows                          126        126  (0 spellings changed)
+6     rows (single words)           126        116  (10 phrase rows moved to culinary_phrases.csv)
+7     rows (lexicon)                116        116  
+7     rows (phrases)                 10         10  
+8     rows (lexicon)                116        111  (exact duplicates removed=0; groups merged=4 absorbing 5 rows; groups with differing old_spelling=0)
+8     rows (phrases)                 10         10  (exact duplicates removed=0; groups merged=0 absorbing 0 rows; groups with differing old_spelling=0)
+9     files                           - 5 data/log files  (lexicon=111 rows, phrases=10 rows, unchanged_spellings=12 rows)

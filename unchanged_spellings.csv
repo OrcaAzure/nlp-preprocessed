@@ -1,0 +1,13 @@
+﻿word,english_meaning,word_type,reason
+billaay,flour,noun,"contains 'll' (Spanish digraph) ['ll' in 'billaay'] (no c/j present, so unchanged either way)"
+cerveza,beer,noun,contains 'z' (Spanish loan letter) ['z' in 'cerveza']; soft 'c' before e/i/y (s-sound; c->k would be wrong) ['c' in 'cerveza']
+cha,tea,noun,contains 'ch' (Spanish digraph) ['ch' in 'cha']
+cocinero,cook,noun,soft 'c' before e/i/y (s-sound; c->k would be wrong) ['c' in 'cocinero']
+lechon,roast,noun,contains 'ch' (Spanish digraph) ['ch' in 'lechon']
+lechonen,roast,verb,contains 'ch' (Spanish digraph) ['ch' in 'lechonen']
+lechugas,lettuce,noun,contains 'ch' (Spanish digraph) ['ch' in 'lechugas']
+maiz,corn,noun,"contains 'z' (Spanish loan letter) ['z' in 'maiz'] (no c/j present, so unchanged either way)"
+mantiquilla,butter,noun,"contains 'qu' (Spanish/old-orthography k-sound) ['qu' in 'mantiquilla']; contains 'll' (Spanish digraph) ['ll' in 'mantiquilla'] (no c/j present, so unchanged either way)"
+piña,pineapple,noun,"contains 'ñ' (Spanish letter) ['ñ' in 'piña'] (no c/j present, so unchanged either way)"
+quiso,cheese,noun,"contains 'qu' (Spanish/old-orthography k-sound) ['qu' in 'quiso'] (no c/j present, so unchanged either way)"
+repollo,cabbage,noun,"contains 'll' (Spanish digraph) ['ll' in 'repollo'] (no c/j present, so unchanged either way)"
